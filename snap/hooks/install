@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+touch $SNAP_DATA/inadyn.conf
