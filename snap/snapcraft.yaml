@@ -12,10 +12,10 @@ confinement: strict # use 'strict' once you have the right plugs and slots
 
 apps:
   inadyn:
-    command: usr/sbin/inadyn -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}
+    command: snapcraft-preload $SNAP/usr/sbin/inadyn -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}/cache -P ${SNAP_DATA}/inadyn.pid
     plugs: [network, network-observe]
   daemon:
-    command: usr/sbin/inadyn -n -s -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}
+    command: snapcraft-preload $SNAP/usr/sbin/inadyn -n -s -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}/cache -P ${SNAP_DATA}/inadyn.pid
     plugs: [network, network-observe]
     daemon: simple
   configpath:
@@ -30,7 +30,8 @@ parts:
       - gettext
       - pkg-config
 
-  inadyn:
+  inadyn: 
+    after: [libconfuse, snapcraft-preload]
     plugin: autotools
     source: https://github.com/troglobit/inadyn.git
     source-type: git
@@ -42,5 +43,4 @@ parts:
     stage-packages:
       - iproute2
       - libgnutls30
-    after: [libconfuse]
 
