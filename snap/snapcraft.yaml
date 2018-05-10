@@ -1,6 +1,6 @@
 name: inadyn
 version: 'stable'
-version-script: git -C parts/inadyn/build describe --tags
+version-script: git -C parts/inadyn/build describe --tags | sed 's/v//'
 summary: Internet Automated Dynamic DNS Client
 description: |
   Inadyn is a small and simple Dynamic DNS, DDNS, client with HTTPS support.
@@ -9,7 +9,7 @@ description: |
   name in sync with your public¹ IP address. It can also be used in installations
   with redundant (backup) connections to the Internet.
 
-confinement: strict # use 'strict' once you have the right plugs and slots
+confinement: strict
 
 apps:
   inadyn:
@@ -25,32 +25,40 @@ apps:
 parts:
   libconfuse:
     plugin: autotools
-    source: https://github.com/martinh/libconfuse/releases/download/v3.2/confuse-3.2.tar.gz
-    configflags: ['--prefix=/usr', '--disable-examples']
+    source: https://github.com/martinh/libconfuse/releases/download/v3.2.1/confuse-3.2.1.tar.xz
+    configflags: ['--prefix=/usr', '--disable-examples', '--disable-static']
     build-packages:
       - gettext
       - pkg-config
+    prime:
+      - -usr/include
+      - -usr/lib/pkgconfig
+      - -usr/share/doc
 
-  inadyn: 
+  inadyn:
     after: [libconfuse, snapcraft-preload]
     plugin: autotools
     source: https://github.com/troglobit/inadyn.git
     source-type: git
-    prepare: |
+    override-build: |
       last_committed_tag="$(git describe --tags --abbrev=0)"
+      last_committed_tag_ver="$(echo last_committed_tag | sed 's/v//')"
       last_released_tag="$(snap info inadyn | awk '$1 == "beta:" { print $2 }')"
       # If the latest tag from the upstream project has not been released to
       # beta, build that tag instead of master.
-      if [ "${last_committed_tag}" != "${last_released_tag}" ]; then
+      if [ "${last_committed_tag_ver}" != "${last_released_tag}" ]; then
         git fetch
         git checkout "${last_committed_tag}"
       fi
-    #source-commit: f9037b6
+      snapcraftctl build
     configflags: ['--prefix=/usr', '--sysconfdir=/etc']
     build-packages:
       - libgnutls28-dev
       - pkg-config
     stage-packages:
       - iproute2
+      - libatm1
       - libgnutls30
+    prime:
+      - -usr/share/doc
 
