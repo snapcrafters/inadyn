@@ -7,25 +7,37 @@ description: |
   routers and Internet gateways to automate the task of keeping your Internet
   name in sync with your public¹ IP address. It can also be used in installations
   with redundant (backup) connections to the Internet.
-
+base: core20
 confinement: strict
+grade: stable
 
 apps:
   inadyn:
-    command: snapcraft-preload $SNAP/usr/sbin/inadyn -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}/cache -P ${SNAP_DATA}/inadyn.pid
+    command-chain:
+      - usr/local/bin/snapcraft-preload
+    command: usr/sbin/inadyn -f $SNAP_DATA/inadyn.conf --cache-dir $SNAP_DATA/cache -P $SNAP_DATA/inadyn.pid
     plugs: [network, network-observe]
   daemon:
-    command: snapcraft-preload $SNAP/usr/sbin/inadyn -n -s -f ${SNAP_DATA}/inadyn.conf --cache-dir=${SNAP_DATA}/cache -P ${SNAP_DATA}/inadyn.pid
+    command-chain:
+      - usr/local/bin/snapcraft-preload
+    command: usr/sbin/inadyn -n -s -f $SNAP_DATA/inadyn.conf --cache-dir $SNAP_DATA/cache -P $SNAP_DATA/inadyn.pid
     plugs: [network, network-observe]
     daemon: simple
   configpath:
-    command: echo ${SNAP_DATA}/inadyn.conf
+    command: bin/configpath
 
 parts:
+  snapcraft-preload:
+      source: https://github.com/sergiusens/snapcraft-preload.git
+      plugin: cmake
+      build-packages:
+        - on amd64:
+          - gcc-multilib
+          - g++-multilib
   libconfuse:
     plugin: autotools
     source: https://github.com/martinh/libconfuse/releases/download/v3.2.1/confuse-3.2.1.tar.xz
-    configflags: ['--prefix=/usr', '--disable-examples', '--disable-static']
+    autotools-configure-parameters: ['--prefix=/usr', '--disable-examples', '--disable-static']
     build-packages:
       - gettext
       - pkg-config
@@ -52,7 +64,12 @@ parts:
       else
         snapcraftctl set-version "$(git rev-parse --short HEAD)"
       fi
-    configflags: ['--prefix=/usr', '--sysconfdir=/etc']
+    autotools-configure-parameters: ['--prefix=/usr', '--sysconfdir=/etc']
+    override-build: |
+      snapcraftctl build
+      echo "#!/bin/bash" > $SNAPCRAFT_PART_INSTALL/bin/configpath
+      echo "echo $SNAP_DATA/inadyn.conf" >> $SNAPCRAFT_PART_INSTALL/bin/configpath
+      chmod +x $SNAPCRAFT_PART_INSTALL/bin/configpath
     build-packages:
       - libgnutls28-dev
       - pkg-config
