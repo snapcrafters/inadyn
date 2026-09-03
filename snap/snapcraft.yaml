@@ -67,8 +67,8 @@ parts:
     autotools-configure-parameters: ['--prefix=/usr', '--sysconfdir=/etc']
     override-build: |
       snapcraftctl build
-      echo "#!/bin/bash" > $SNAPCRAFT_PART_INSTALL/bin/configpath
-      echo "echo $SNAP_DATA/inadyn.conf" >> $SNAPCRAFT_PART_INSTALL/bin/configpath
+      echo '#!/bin/bash' > $SNAPCRAFT_PART_INSTALL/bin/configpath
+      echo 'echo $SNAP_DATA/inadyn.conf' >> $SNAPCRAFT_PART_INSTALL/bin/configpath
       chmod +x $SNAPCRAFT_PART_INSTALL/bin/configpath
     build-packages:
       - libgnutls28-dev
